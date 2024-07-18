@@ -7,12 +7,19 @@ import (
 	"os"
 	"runtime"
 	"sync"
+	"testing"
 	"time"
+
+	"go.uber.org/goleak"
 )
 
 type Item struct {
 	Object     interface{}
 	Expiration int64
+}
+
+func TestMain(m *testing.M) {
+	goleak.VerifyTestMain(m)
 }
 
 // Returns true if the item has expired.
