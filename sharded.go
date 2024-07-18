@@ -130,7 +130,8 @@ type shardedJanitor struct {
 
 func (j *shardedJanitor) Run(sc *shardedCache) {
 	j.stop = make(chan bool)
-	tick := time.Tick(j.Interval)
+	ticker := time.NewTicker(j.Interval)
+	tick := ticker.C
 	for {
 		select {
 		case <-tick:

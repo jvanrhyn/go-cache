@@ -2,7 +2,7 @@ package cache
 
 import (
 	"bytes"
-	"io/ioutil"
+	"os"
 	"runtime"
 	"strconv"
 	"sync"
@@ -1267,14 +1267,14 @@ func testFillAndSerialize(t *testing.T, tc *Cache) {
 		{Num: 3},
 	}, DefaultExpiration)
 	tc.Set("[]*struct", []*TestStruct{
-		&TestStruct{Num: 4},
-		&TestStruct{Num: 5},
+		{Num: 4},
+		{Num: 5},
 	}, DefaultExpiration)
 	tc.Set("structception", &TestStruct{
 		Num: 42,
 		Children: []*TestStruct{
-			&TestStruct{Num: 6174},
-			&TestStruct{Num: 4716},
+			{Num: 6174},
+			{Num: 4716},
 		},
 	}, DefaultExpiration)
 
@@ -1376,18 +1376,23 @@ func testFillAndSerialize(t *testing.T, tc *Cache) {
 
 func TestFileSerialization(t *testing.T) {
 	tc := New(DefaultExpiration, 0)
-	tc.Add("a", "a", DefaultExpiration)
-	tc.Add("b", "b", DefaultExpiration)
-	f, err := ioutil.TempFile("", "go-cache-cache.dat")
+	_ = tc.Add("a", "a", DefaultExpiration)
+	_ = tc.Add("b", "b", DefaultExpiration)
+	f, err := os.CreateTemp("", "go-cache-cache.dat")
 	if err != nil {
 		t.Fatal("Couldn't create cache file:", err)
 	}
 	fname := f.Name()
 	f.Close()
-	tc.SaveFile(fname)
-
+	err = tc.SaveFile(fname)
+	if err != nil {
+		t.Fatal("Couldn't save cache to file:", err)
+	}
 	oc := New(DefaultExpiration, 0)
-	oc.Add("a", "aa", 0) // this should not be overwritten
+	err = oc.Add("a", "aa", 0)
+	if err != nil {
+		t.Error(err)
+	}
 	err = oc.LoadFile(fname)
 	if err != nil {
 		t.Error(err)
@@ -1452,7 +1457,7 @@ func BenchmarkRWMutexMapGet(b *testing.B) {
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		mu.RLock()
-		_, _ = m["foo"]
+		_ = m["foo"]
 		mu.RUnlock()
 	}
 }
@@ -1467,7 +1472,7 @@ func BenchmarkRWMutexInterfaceMapGetStruct(b *testing.B) {
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		mu.RLock()
-		_, _ = m[s]
+		_ = m[s]
 		mu.RUnlock()
 	}
 }
@@ -1481,7 +1486,7 @@ func BenchmarkRWMutexInterfaceMapGetString(b *testing.B) {
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
 		mu.RLock()
-		_, _ = m["foo"]
+		_ = m["foo"]
 		mu.RUnlock()
 	}
 }
@@ -1529,7 +1534,7 @@ func BenchmarkRWMutexMapGetConcurrent(b *testing.B) {
 		go func() {
 			for j := 0; j < each; j++ {
 				mu.RLock()
-				_, _ = m["foo"]
+				_ = m["foo"]
 				mu.RUnlock()
 			}
 			wg.Done()
@@ -1659,7 +1664,7 @@ func BenchmarkIncrementInt(b *testing.B) {
 	tc.Set("foo", 0, DefaultExpiration)
 	b.StartTimer()
 	for i := 0; i < b.N; i++ {
-		tc.IncrementInt("foo", 1)
+		_, _ = tc.IncrementInt("foo", 1)
 	}
 }
 
